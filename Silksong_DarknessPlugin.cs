@@ -15,23 +15,17 @@ public partial class Silksong_DarknessPlugin : BaseUnityPlugin
     }
 }
 
-[HarmonyPatch(typeof(GameManager), nameof(GameManager.EnterHero))]
-public static class Darkness_EnterHeroPatch
+[HarmonyPatch(typeof(PlayMakerFSM), nameof(PlayMakerFSM.Awake))]
+public static class VignetteFSM_AwakePatch
 {
-    public static void Postfix()
+    public static void Postfix(PlayMakerFSM __instance)
     {
-        var hc = HeroController.instance;
-        if (hc == null || hc.vignetteFSM == null)
-            return;
+        // 只针对 vignetteFSM
+        if (__instance.FsmName != "Darkness Control") return;
 
-        hc.vignetteFSM.SetState("Dark 2");
-        hc.vignette.enabled = true;
-
-        Debug.Log("[Darkness_EnterHeroPatch] Forced vignette to Dark 2.");
-
-        FsmState? dark2 = null;
-
-        foreach (var state in hc.vignetteFSM.FsmStates)
+        // 找到 Dark 2 状态
+        FsmState dark2 = null!;
+        foreach (var state in __instance.FsmStates)
         {
             if (state.Name == "Dark 2")
             {
@@ -39,13 +33,15 @@ public static class Darkness_EnterHeroPatch
                 break;
             }
         }
+
         if (dark2 == null)
         {
-            Debug.LogError("[Darkness_EnterHeroPatch] Could not find 'Dark 2' state in vignette FSM.");
+            Debug.LogError("[Darkness] Could not find 'Dark 2' state.");
             return;
         }
 
-        foreach (var state in hc.vignetteFSM.FsmStates)
+        // 修改需要固定跳转的状态
+        foreach (var state in __instance.FsmStates)
         {
             if (state.Name == "Dark Lev Check")
             {
@@ -56,8 +52,11 @@ public static class Darkness_EnterHeroPatch
                 }
             }
         }
-        
-         Debug.Log("[Darkness_EnterHeroPatch] change transition rule");
+
+        // // 强制 FSM 当前状态为 Dark 2
+        // __instance.SetState("Dark 2");
+        // HeroController.instance.vignette.enabled = true;
+
+        Debug.Log("[Darkness] Transition fixed and vignette forced Dark 2.");
     }
 }
-
