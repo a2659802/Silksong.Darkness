@@ -124,3 +124,27 @@ public static class Darkness_EnterHeroPatch
         }
     }
 }
+
+[HarmonyPatch(typeof(HeroController), nameof(HeroController.Update))]
+public static class Darkness_HeroUpdate
+{
+    public static void Postfix()
+    {
+        // Only run the expensive search once every 120 frames
+        if (Time.frameCount % 120 != 0) return;
+        // 查找所有名字包含Vignette Cutout的游戏对象并禁用它们
+        var vignetteObjects = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        foreach (var obj in vignetteObjects)
+        {
+            if (obj.name.Contains("Vignette Cutout"))
+            {
+                if (!obj.activeSelf)
+                {
+                    continue;
+                }
+                obj.SetActive(false);
+                Debug.Log("[Darkness] Disabled Vignette Cutout object: " + obj.name);
+            }
+        }
+    }
+}
